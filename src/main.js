@@ -3,7 +3,7 @@ import { categories, restaurants } from './data/mockData.js';
 
 // ========== Config ==========
 // 在这里填入你的高德地图 Web服务 API Key
-const AMAP_KEY = 'YOUR_AMAP_KEY_HERE';
+const AMAP_KEY = 'a5d955462f96490f08f3b16d8344370e';
 
 // ========== State ==========
 const state = {
