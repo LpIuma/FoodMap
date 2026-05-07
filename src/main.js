@@ -1,0 +1,486 @@
+import './styles/index.css';
+import { categories, restaurants } from './data/mockData.js';
+
+// ========== State ==========
+const state = {
+  restaurants: [...restaurants],
+  filtered: [...restaurants],
+  selectedCategory: null,
+  selectedPrice: 'all',
+  minRating: 0,
+  searchQuery: '',
+  map: null,
+  markers: null,
+  markerMap: {},
+  sidebarOpen: window.innerWidth > 900,
+  pickingLocation: false,
+};
+
+// ========== Helpers ==========
+function avgRating(r) {
+  const { taste, environment, service } = r.rating;
+  return ((taste + environment + service) / 3).toFixed(1);
+}
+
+function stars(n, max = 5) {
+  const full = Math.floor(n);
+  const half = n - full >= 0.5 ? 1 : 0;
+  return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(max - full - half);
+}
+
+function getCategoryById(id) {
+  return categories.find(c => c.id === id);
+}
+
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ========== Map ==========
+function initMap() {
+  const map = L.map('map', { zoomControl: false }).setView([43.88, 125.32], 13);
+
+  // Dark tiles
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    maxZoom: 19,
+  }).addTo(map);
+
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+  state.map = map;
+  state.markers = L.markerClusterGroup({
+    maxClusterRadius: 50,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+  });
+  map.addLayer(state.markers);
+
+  // Click to pick location
+  map.on('click', (e) => {
+    if (state.pickingLocation) {
+      document.getElementById('f-lat').value = e.latlng.lat.toFixed(6);
+      document.getElementById('f-lng').value = e.latlng.lng.toFixed(6);
+      state.pickingLocation = false;
+      map.getContainer().style.cursor = '';
+      toast('坐标已选取', 'success');
+    }
+  });
+
+  renderMarkers();
+}
+
+function createMarkerIcon(category) {
+  const cat = category || { icon: '📍', color: '#FF6B35' };
+  return L.divIcon({
+    className: 'custom-marker-wrapper',
+    html: `<div class="custom-marker" style="border-color:${cat.color}"><span class="marker-inner">${cat.icon}</span></div>`,
+    iconSize: [36, 42],
+    iconAnchor: [18, 42],
+    popupAnchor: [0, -44],
+  });
+}
+
+function renderMarkers() {
+  state.markers.clearLayers();
+  state.markerMap = {};
+
+  state.filtered.forEach(r => {
+    const cat = getCategoryById(r.category_id);
+    const marker = L.marker([r.latitude, r.longitude], { icon: createMarkerIcon(cat) });
+
+    const avg = avgRating(r);
+    marker.bindPopup(`
+      <div class="popup-inner">
+        <div class="popup-name">${r.name}</div>
+        <div class="popup-cat">${cat ? cat.icon + ' ' + cat.name : ''}</div>
+        <div class="popup-rating">
+          <span>⭐ ${avg}</span>
+          <span>💰 ¥${r.avg_price}/人</span>
+        </div>
+        <div class="popup-addr">📍 ${r.address}</div>
+        <button class="popup-btn" onclick="window.__showDetail(${r.id})">查看详情</button>
+      </div>
+    `, { className: 'map-popup', maxWidth: 280 });
+
+    state.markers.addLayer(marker);
+    state.markerMap[r.id] = marker;
+  });
+}
+
+// ========== Sidebar ==========
+function renderCategories() {
+  const container = document.getElementById('category-filters');
+  container.innerHTML = `
+    <button class="category-btn ${!state.selectedCategory ? 'active' : ''}" data-cat="all">
+      <span class="cat-icon">🍽️</span>全部
+    </button>
+    ${categories.map(c => `
+      <button class="category-btn ${state.selectedCategory === c.id ? 'active' : ''}" data-cat="${c.id}">
+        <span class="cat-icon">${c.icon}</span>${c.name}
+      </button>
+    `).join('')}
+  `;
+
+  container.querySelectorAll('.category-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = btn.dataset.cat;
+      state.selectedCategory = cat === 'all' ? null : Number(cat);
+      applyFilters();
+      renderCategories();
+    });
+  });
+}
+
+function renderRestaurantList() {
+  const list = document.getElementById('restaurant-list');
+  const count = document.getElementById('results-count');
+  count.textContent = `${state.filtered.length} 家餐厅`;
+
+  if (state.filtered.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted);">
+      <div style="font-size:40px;margin-bottom:8px;">🔍</div>
+      <p>没有找到符合条件的餐厅</p></div>`;
+    return;
+  }
+
+  list.innerHTML = state.filtered.map(r => {
+    const cat = getCategoryById(r.category_id);
+    const avg = avgRating(r);
+    return `
+      <div class="rest-card" data-id="${r.id}">
+        <div class="rest-card-img skeleton" style="display:flex;align-items:center;justify-content:center;font-size:28px;">${cat ? cat.icon : '🍽️'}</div>
+        <div class="rest-card-info">
+          <div class="rest-card-name">${r.name}</div>
+          <div class="rest-card-cat">${cat ? cat.name : ''}</div>
+          <div class="rest-card-addr">${r.address}</div>
+          <div class="rest-card-meta">
+            <span class="rest-card-rating">⭐ ${avg}</span>
+            <span class="rest-card-price">¥${r.avg_price}/人</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('.rest-card').forEach(card => {
+    card.addEventListener('click', () => showDetail(Number(card.dataset.id)));
+  });
+}
+
+// ========== Filters ==========
+function applyFilters() {
+  let result = [...state.restaurants];
+
+  // Category
+  if (state.selectedCategory) {
+    result = result.filter(r => r.category_id === state.selectedCategory);
+  }
+
+  // Price
+  if (state.selectedPrice !== 'all') {
+    const [min, max] = state.selectedPrice.includes('+')
+      ? [parseInt(state.selectedPrice), Infinity]
+      : state.selectedPrice.split('-').map(Number);
+    result = result.filter(r => r.avg_price >= min && r.avg_price <= max);
+  }
+
+  // Rating
+  if (state.minRating > 0) {
+    result = result.filter(r => parseFloat(avgRating(r)) >= state.minRating);
+  }
+
+  // Search
+  if (state.searchQuery) {
+    const q = state.searchQuery.toLowerCase();
+    result = result.filter(r =>
+      r.name.toLowerCase().includes(q) ||
+      r.address.toLowerCase().includes(q) ||
+      r.recommended_dishes.some(d => d.toLowerCase().includes(q)) ||
+      (r.description && r.description.toLowerCase().includes(q))
+    );
+  }
+
+  state.filtered = result;
+  renderRestaurantList();
+  renderMarkers();
+}
+
+// ========== Detail Panel ==========
+function showDetail(id) {
+  const r = state.restaurants.find(x => x.id === id);
+  if (!r) return;
+
+  const cat = getCategoryById(r.category_id);
+  const panel = document.getElementById('detail-panel');
+  const content = document.getElementById('detail-content');
+
+  content.innerHTML = `
+    <div class="detail-cover" style="display:flex;align-items:center;justify-content:center;font-size:64px;background:linear-gradient(135deg,${cat ? cat.color : 'var(--primary)'}33, var(--bg-card));">
+      ${cat ? cat.icon : '🍽️'}
+    </div>
+    <div class="detail-body">
+      <h1 class="detail-name">${r.name}</h1>
+      <span class="detail-cat-badge">${cat ? cat.icon + ' ' + cat.name : ''}</span>
+
+      <div class="detail-ratings">
+        <div class="detail-rating-item">
+          <div class="detail-rating-label">口味</div>
+          <div class="detail-rating-score">${r.rating.taste}</div>
+        </div>
+        <div class="detail-rating-item">
+          <div class="detail-rating-label">环境</div>
+          <div class="detail-rating-score">${r.rating.environment}</div>
+        </div>
+        <div class="detail-rating-item">
+          <div class="detail-rating-label">服务</div>
+          <div class="detail-rating-score">${r.rating.service}</div>
+        </div>
+        <div class="detail-rating-item">
+          <div class="detail-rating-label">综合</div>
+          <div class="detail-rating-score">${avgRating(r)}</div>
+        </div>
+      </div>
+
+      <div class="detail-info-list">
+        <div class="detail-info-row">
+          <span class="detail-info-icon">📍</span>
+          <span class="detail-info-text">${r.address}</span>
+        </div>
+        ${r.phone ? `<div class="detail-info-row"><span class="detail-info-icon">📞</span><span class="detail-info-text">${r.phone}</span></div>` : ''}
+        ${r.business_hours ? `<div class="detail-info-row"><span class="detail-info-icon">🕐</span><span class="detail-info-text">${r.business_hours}</span></div>` : ''}
+        <div class="detail-info-row">
+          <span class="detail-info-icon">💰</span>
+          <span class="detail-info-text">人均 ¥${r.avg_price}</span>
+        </div>
+      </div>
+
+      ${r.recommended_dishes.length ? `
+        <h3 class="detail-section-title">🏷️ 推荐菜品</h3>
+        <div class="detail-dishes">
+          ${r.recommended_dishes.map(d => `<span class="dish-tag">${d}</span>`).join('')}
+        </div>` : ''}
+
+      ${r.description ? `
+        <h3 class="detail-section-title">📝 简介</h3>
+        <div class="detail-desc">${r.description}</div>` : ''}
+    </div>
+  `;
+
+  panel.classList.remove('hidden');
+
+  // Pan map to restaurant
+  if (state.map) {
+    state.map.flyTo([r.latitude, r.longitude], 16, { duration: 0.8 });
+    const marker = state.markerMap[r.id];
+    if (marker) setTimeout(() => marker.openPopup(), 900);
+  }
+}
+
+window.__showDetail = showDetail;
+
+// ========== Star Rating Widget ==========
+function initStarRatings() {
+  document.querySelectorAll('.star-rating').forEach(container => {
+    container.innerHTML = '';
+    container._value = 0;
+    for (let i = 1; i <= 5; i++) {
+      const star = document.createElement('span');
+      star.className = 'star';
+      star.textContent = '★';
+      star.dataset.value = i;
+      star.addEventListener('click', () => {
+        container._value = i;
+        container.querySelectorAll('.star').forEach((s, idx) => {
+          s.classList.toggle('filled', idx < i);
+        });
+      });
+      star.addEventListener('mouseenter', () => {
+        container.querySelectorAll('.star').forEach((s, idx) => {
+          s.classList.toggle('filled', idx < i);
+        });
+      });
+      container.appendChild(star);
+    }
+    container.addEventListener('mouseleave', () => {
+      container.querySelectorAll('.star').forEach((s, idx) => {
+        s.classList.toggle('filled', idx < container._value);
+      });
+    });
+  });
+}
+
+// ========== Form (Add Restaurant) ==========
+function initAddForm() {
+  const select = document.getElementById('f-category');
+  select.innerHTML = '<option value="">选择分类...</option>' +
+    categories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+
+  document.getElementById('restaurant-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('f-name').value.trim();
+    const catId = Number(document.getElementById('f-category').value);
+    const address = document.getElementById('f-address').value.trim();
+
+    if (!name || !catId || !address) {
+      toast('请填写必填项', 'error');
+      return;
+    }
+
+    const newR = {
+      id: Date.now(),
+      name,
+      slug: name.replace(/\s+/g, '-'),
+      category_id: catId,
+      address,
+      district: '',
+      latitude: parseFloat(document.getElementById('f-lat').value) || 43.88,
+      longitude: parseFloat(document.getElementById('f-lng').value) || 125.32,
+      phone: document.getElementById('f-phone').value,
+      avg_price: parseInt(document.getElementById('f-price').value) || 0,
+      rating: {
+        taste: document.querySelector('[data-field="taste"]')?._value || 0,
+        environment: document.querySelector('[data-field="environment"]')?._value || 0,
+        service: document.querySelector('[data-field="service"]')?._value || 0,
+      },
+      recommended_dishes: document.getElementById('f-dishes').value.split(/[,，]/).map(s => s.trim()).filter(Boolean),
+      business_hours: document.getElementById('f-hours').value,
+      description: document.getElementById('f-desc').value,
+      cover_image: '', images: [], status: 'pending',
+    };
+
+    state.restaurants.push(newR);
+    applyFilters();
+    closeModal();
+    toast('餐厅已提交，等待审核', 'success');
+    e.target.reset();
+  });
+}
+
+function openModal() {
+  document.getElementById('add-modal').classList.remove('hidden');
+  initStarRatings();
+}
+
+function closeModal() {
+  document.getElementById('add-modal').classList.add('hidden');
+}
+
+// ========== Event Bindings ==========
+function bindEvents() {
+  // Sidebar toggle
+  document.getElementById('sidebar-toggle').addEventListener('click', () => {
+    const sb = document.getElementById('sidebar');
+    if (window.innerWidth <= 900) {
+      sb.classList.toggle('open');
+    } else {
+      sb.classList.toggle('collapsed');
+      // Adjust grid
+      const app = document.getElementById('app');
+      if (sb.classList.contains('collapsed')) {
+        app.style.gridTemplateColumns = '1fr';
+        app.style.gridTemplateAreas = '"header" "map"';
+      } else {
+        app.style.gridTemplateColumns = 'var(--sidebar-w) 1fr';
+        app.style.gridTemplateAreas = '"header header" "sidebar map"';
+      }
+      setTimeout(() => state.map?.invalidateSize(), 300);
+    }
+  });
+
+  // Search
+  const searchInput = document.getElementById('search-input');
+  const searchClear = document.getElementById('search-clear');
+  let searchTimer;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchClear.classList.toggle('hidden', !searchInput.value);
+    searchTimer = setTimeout(() => {
+      state.searchQuery = searchInput.value.trim();
+      applyFilters();
+    }, 300);
+  });
+  searchClear.addEventListener('click', () => {
+    searchInput.value = '';
+    searchClear.classList.add('hidden');
+    state.searchQuery = '';
+    applyFilters();
+  });
+
+  // Price filters
+  document.getElementById('price-filters').addEventListener('click', (e) => {
+    const chip = e.target.closest('.filter-chip');
+    if (!chip) return;
+    document.querySelectorAll('#price-filters .filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    state.selectedPrice = chip.dataset.price;
+    applyFilters();
+  });
+
+  // Rating slider
+  const ratingRange = document.getElementById('rating-range');
+  const ratingValue = document.getElementById('rating-value');
+  ratingRange.addEventListener('input', () => {
+    const v = parseFloat(ratingRange.value);
+    state.minRating = v;
+    ratingValue.textContent = v === 0 ? '不限' : `${v}+`;
+    const pct = (v / 5) * 100;
+    ratingRange.style.background = `linear-gradient(90deg, var(--primary) ${pct}%, var(--bg-card) ${pct}%)`;
+    applyFilters();
+  });
+
+  // Detail close
+  document.getElementById('detail-close').addEventListener('click', () => {
+    document.getElementById('detail-panel').classList.add('hidden');
+  });
+
+  // Add restaurant
+  document.getElementById('add-restaurant-btn').addEventListener('click', openModal);
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('form-cancel').addEventListener('click', closeModal);
+  document.getElementById('add-modal').addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-overlay')) closeModal();
+  });
+
+  // Location picking hint
+  document.querySelector('.form-hint')?.addEventListener('click', () => {
+    state.pickingLocation = true;
+    state.map.getContainer().style.cursor = 'crosshair';
+    closeModal();
+    toast('点击地图选取坐标位置', 'info');
+  });
+
+  // Locate me
+  document.getElementById('locate-btn').addEventListener('click', () => {
+    if (!navigator.geolocation) {
+      toast('浏览器不支持定位', 'error');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        state.map.flyTo([pos.coords.latitude, pos.coords.longitude], 15);
+        toast('已定位到您的位置', 'success');
+      },
+      () => toast('定位失败，请检查权限', 'error')
+    );
+  });
+}
+
+// ========== Init ==========
+function init() {
+  initMap();
+  renderCategories();
+  renderRestaurantList();
+  initAddForm();
+  bindEvents();
+
+  // Mobile: sidebar defaults closed
+  if (window.innerWidth <= 900) {
+    document.getElementById('sidebar').classList.remove('open');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);

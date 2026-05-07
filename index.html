@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>长春美食地图 | Changchun FoodMap</title>
+  <meta name="description" content="探索长春市最全的美食地图，发现身边好味道。搜索、浏览、分享你喜爱的餐厅。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <link rel="stylesheet" href="/src/styles/index.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header id="main-header" class="header">
+      <div class="header-left">
+        <button id="sidebar-toggle" class="icon-btn" aria-label="切换侧边栏">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="logo">
+          <span class="logo-icon">🍜</span>
+          <span class="logo-text">长春美食地图</span>
+        </div>
+      </div>
+      <div class="header-center">
+        <div class="search-box" id="search-box">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search-input" placeholder="搜索餐厅、菜品..." autocomplete="off" />
+          <button id="search-clear" class="search-clear hidden" aria-label="清除搜索">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="header-right">
+        <button id="locate-btn" class="icon-btn" title="定位到我的位置">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+        </button>
+        <button id="add-restaurant-btn" class="btn btn-primary" title="添加餐厅">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span class="btn-label">添加餐厅</span>
+        </button>
+        <button id="auth-btn" class="icon-btn" title="登录 / 个人中心">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-inner">
+        <!-- Category Filter -->
+        <section class="sidebar-section">
+          <h3 class="sidebar-title">美食分类</h3>
+          <div id="category-filters" class="category-grid"></div>
+        </section>
+        <!-- Price Filter -->
+        <section class="sidebar-section">
+          <h3 class="sidebar-title">人均消费</h3>
+          <div id="price-filters" class="price-btns">
+            <button class="filter-chip active" data-price="all">全部</button>
+            <button class="filter-chip" data-price="0-30">¥30以下</button>
+            <button class="filter-chip" data-price="30-60">¥30-60</button>
+            <button class="filter-chip" data-price="60-100">¥60-100</button>
+            <button class="filter-chip" data-price="100+">¥100+</button>
+          </div>
+        </section>
+        <!-- Rating Filter -->
+        <section class="sidebar-section">
+          <h3 class="sidebar-title">最低评分</h3>
+          <div id="rating-filter" class="rating-slider-wrap">
+            <input type="range" id="rating-range" min="0" max="5" step="0.5" value="0" />
+            <span id="rating-value" class="rating-value">不限</span>
+          </div>
+        </section>
+        <!-- Results -->
+        <section class="sidebar-section sidebar-results">
+          <div class="results-header">
+            <h3 class="sidebar-title">搜索结果</h3>
+            <span id="results-count" class="results-count">0 家餐厅</span>
+          </div>
+          <div id="restaurant-list" class="restaurant-list"></div>
+        </section>
+      </div>
+    </aside>
+
+    <!-- Map -->
+    <div id="map" class="map-container"></div>
+
+    <!-- Restaurant Detail Panel -->
+    <div id="detail-panel" class="detail-panel hidden">
+      <button id="detail-close" class="detail-close" aria-label="关闭">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div id="detail-content" class="detail-content"></div>
+    </div>
+
+    <!-- Add/Edit Restaurant Modal -->
+    <div id="add-modal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 id="modal-title">添加餐厅</h2>
+          <button id="modal-close" class="icon-btn" aria-label="关闭">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <form id="restaurant-form" class="modal-body">
+          <div class="form-group">
+            <label for="f-name">店名 <span class="required">*</span></label>
+            <input type="text" id="f-name" required placeholder="例：老昌春饼" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="f-category">分类 <span class="required">*</span></label>
+              <select id="f-category" required></select>
+            </div>
+            <div class="form-group">
+              <label for="f-price">人均 (元)</label>
+              <input type="number" id="f-price" min="0" placeholder="50" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="f-address">地址 <span class="required">*</span></label>
+            <input type="text" id="f-address" required placeholder="长春市朝阳区..." />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="f-lat">纬度</label>
+              <input type="number" id="f-lat" step="0.000001" placeholder="43.88" />
+            </div>
+            <div class="form-group">
+              <label for="f-lng">经度</label>
+              <input type="number" id="f-lng" step="0.000001" placeholder="125.32" />
+            </div>
+          </div>
+          <p class="form-hint">💡 可在地图上点击选取坐标</p>
+          <div class="form-group">
+            <label for="f-phone">电话</label>
+            <input type="tel" id="f-phone" placeholder="0431-XXXXXXXX" />
+          </div>
+          <div class="form-group">
+            <label for="f-hours">营业时间</label>
+            <input type="text" id="f-hours" placeholder="10:00-22:00" />
+          </div>
+          <div class="form-group">
+            <label for="f-dishes">推荐菜品</label>
+            <input type="text" id="f-dishes" placeholder="用逗号分隔，如：锅包肉,春饼,酱骨头" />
+          </div>
+          <div class="form-group">
+            <label for="f-desc">描述</label>
+            <textarea id="f-desc" rows="3" placeholder="介绍一下这家店..."></textarea>
+          </div>
+          <!-- Ratings -->
+          <div class="form-group">
+            <label>评分</label>
+            <div class="rating-inputs">
+              <div class="rating-input-row">
+                <span>口味</span>
+                <div class="star-rating" data-field="taste"></div>
+              </div>
+              <div class="rating-input-row">
+                <span>环境</span>
+                <div class="star-rating" data-field="environment"></div>
+              </div>
+              <div class="rating-input-row">
+                <span>服务</span>
+                <div class="star-rating" data-field="service"></div>
+              </div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" id="form-cancel" class="btn btn-ghost">取消</button>
+            <button type="submit" class="btn btn-primary">提交</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
