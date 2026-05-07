@@ -1,6 +1,10 @@
 import './styles/index.css';
 import { categories, restaurants } from './data/mockData.js';
 
+// ========== Config ==========
+// 在这里填入你的高德地图 Web服务 API Key
+const AMAP_KEY = 'YOUR_AMAP_KEY_HERE';
+
 // ========== State ==========
 const state = {
   restaurants: [...restaurants],
@@ -313,6 +317,136 @@ function initStarRatings() {
   });
 }
 
+// ========== Amap POI Search ==========
+const AMAP_CATEGORY_MAP = {
+  '中餐厅': 1, '东北菜': 1, '家常菜': 1, '饺子馆': 1, '炖菜': 1,
+  '烧烤': 2, '烤肉': 2, '烤串': 2,
+  '火锅': 3, '麻辣烫': 3,
+  '韩国料理': 4, '韩国菜': 4, '朝鲜菜': 4,
+  '日本料理': 5, '寿司': 5, '日本菜': 5, '拉面': 5,
+  '西餐': 6, '西式快餐': 6, '牛排': 6, '披萨': 6,
+  '小吃快餐': 7, '面点': 7, '粥店': 7, '包子': 7, '糕饼店': 7,
+  '咖啡厅': 8, '甜品店': 8, '茶餐厅': 8, '冷饮店': 8, '面包甜点': 8,
+  '面馆': 9, '粉面馆': 9, '拉面馆': 9,
+};
+
+function matchCategory(amapType) {
+  if (!amapType) return null;
+  for (const [keyword, catId] of Object.entries(AMAP_CATEGORY_MAP)) {
+    if (amapType.includes(keyword)) return catId;
+  }
+  return null;
+}
+
+async function searchAmapPOI(keyword) {
+  if (AMAP_KEY === 'YOUR_AMAP_KEY_HERE') {
+    toast('请先配置高德地图 API Key（在 main.js 顶部）', 'error');
+    return [];
+  }
+  const url = `https://restapi.amap.com/v3/place/text?key=${AMAP_KEY}&keywords=${encodeURIComponent(keyword)}&city=长春&citylimit=true&types=050000&offset=8&extensions=all`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.status === '1' && data.pois) return data.pois;
+    if (data.info) toast(`高德API: ${data.info}`, 'error');
+    return [];
+  } catch (e) {
+    toast('网络请求失败', 'error');
+    return [];
+  }
+}
+
+function autoFillField(id, value) {
+  const el = document.getElementById(id);
+  if (el && value) {
+    el.value = value;
+    el.classList.add('auto-filled');
+    setTimeout(() => el.classList.remove('auto-filled'), 600);
+  }
+}
+
+function fillFormFromPOI(poi) {
+  const [lng, lat] = (poi.location || '').split(',');
+  autoFillField('f-name', poi.name || '');
+  autoFillField('f-address', poi.address || '');
+  autoFillField('f-lat', lat || '');
+  autoFillField('f-lng', lng || '');
+  autoFillField('f-phone', poi.tel || '');
+
+  // Business hours from extensions
+  if (poi.biz_ext && poi.biz_ext.open_time) {
+    autoFillField('f-hours', poi.biz_ext.open_time);
+  }
+  // Average price
+  if (poi.biz_ext && poi.biz_ext.cost) {
+    autoFillField('f-price', poi.biz_ext.cost);
+  }
+
+  // Auto-match category
+  const catId = matchCategory(poi.type || '');
+  if (catId) {
+    const select = document.getElementById('f-category');
+    select.value = catId;
+    select.classList.add('auto-filled');
+    setTimeout(() => select.classList.remove('auto-filled'), 600);
+  }
+
+  // Hide results
+  document.getElementById('poi-results').classList.add('hidden');
+  toast('✅ 信息已自动填入，可手动修改', 'success');
+}
+
+function initPOISearch() {
+  const input = document.getElementById('poi-search');
+  const resultsEl = document.getElementById('poi-results');
+  const spinner = document.getElementById('poi-spinner');
+  if (!input) return;
+
+  let timer;
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = input.value.trim();
+    if (q.length < 2) {
+      resultsEl.classList.add('hidden');
+      return;
+    }
+    timer = setTimeout(async () => {
+      spinner.classList.remove('hidden');
+      const pois = await searchAmapPOI(q);
+      spinner.classList.add('hidden');
+
+      if (pois.length === 0) {
+        resultsEl.innerHTML = '<div class="poi-no-result">未找到相关餐厅</div>';
+        resultsEl.classList.remove('hidden');
+        return;
+      }
+
+      resultsEl.innerHTML = pois.map((p, i) => `
+        <div class="poi-result-item" data-idx="${i}">
+          <div class="poi-result-name">${p.name}</div>
+          <div class="poi-result-addr">📍 ${p.address || p.cityname + p.adname}</div>
+          <div class="poi-result-meta">${p.type ? p.type.split(';')[0] : ''}${p.biz_ext && p.biz_ext.cost ? ' · ¥' + p.biz_ext.cost + '/人' : ''}${p.tel ? ' · ' + p.tel : ''}</div>
+        </div>
+      `).join('');
+      resultsEl.classList.remove('hidden');
+
+      resultsEl.querySelectorAll('.poi-result-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const idx = Number(item.dataset.idx);
+          fillFormFromPOI(pois[idx]);
+        });
+      });
+    }, 500);
+  });
+
+  // Close results when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.poi-search-group')) {
+      resultsEl.classList.add('hidden');
+    }
+  });
+}
+
 // ========== Form (Add Restaurant) ==========
 function initAddForm() {
   const select = document.getElementById('f-category');
@@ -475,6 +609,7 @@ function init() {
   renderCategories();
   renderRestaurantList();
   initAddForm();
+  initPOISearch();
   bindEvents();
 
   // Mobile: sidebar defaults closed
