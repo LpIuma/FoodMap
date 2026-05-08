@@ -152,15 +152,16 @@ function renderRestaurantList() {
     return;
   }
 
-  list.innerHTML = state.filtered.map(r => {
+  list.innerHTML = state.filtered.map((r, i) => {
     const cat = getCategoryById(r.category_id);
     const avg = avgRating(r);
+    const catColor = cat ? cat.color : '#E8A838';
     return `
-      <div class="rest-card" data-id="${r.id}">
-        <div class="rest-card-img">${cat ? cat.icon : '🍽️'}</div>
+      <div class="rest-card" data-id="${r.id}" style="animation-delay:${i * 0.04}s;">
+        <div class="rest-card-img" style="box-shadow:inset 0 0 0 2px ${catColor}30;">${cat ? cat.icon : '🍽️'}</div>
         <div class="rest-card-info">
           <div class="rest-card-name">${r.name}</div>
-          <div class="rest-card-cat">${cat ? cat.name : ''}</div>
+          <div class="rest-card-cat" style="color:${catColor}">${cat ? cat.name : ''}</div>
           <div class="rest-card-addr">${r.address}</div>
           <div class="rest-card-meta">
             <span class="rest-card-rating">⭐ ${avg}</span>
@@ -223,7 +224,7 @@ function showDetail(id) {
   const content = document.getElementById('detail-content');
 
   content.innerHTML = `
-    <div class="detail-cover" style="display:flex;align-items:center;justify-content:center;font-size:64px;background:linear-gradient(135deg,${cat ? cat.color : 'var(--primary)'}33, var(--bg-card));">
+    <div class="detail-cover" style="display:flex;align-items:center;justify-content:center;font-size:72px;background:linear-gradient(160deg,${cat ? cat.color : '#E8A838'}25, #2C2418 70%);">
       ${cat ? cat.icon : '🍽️'}
     </div>
     <div class="detail-body">
