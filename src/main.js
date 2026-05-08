@@ -157,7 +157,7 @@ function renderRestaurantList() {
     const avg = avgRating(r);
     return `
       <div class="rest-card" data-id="${r.id}">
-        <div class="rest-card-img skeleton" style="display:flex;align-items:center;justify-content:center;font-size:28px;">${cat ? cat.icon : '🍽️'}</div>
+        <div class="rest-card-img">${cat ? cat.icon : '🍽️'}</div>
         <div class="rest-card-info">
           <div class="rest-card-name">${r.name}</div>
           <div class="rest-card-cat">${cat ? cat.name : ''}</div>
