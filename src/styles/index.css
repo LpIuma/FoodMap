@@ -145,26 +145,31 @@ body {
 }
 .sidebar.collapsed { transform: translateX(-100%); opacity: 0; pointer-events: none; }
 
-/* Category - Horizontal Scroll Pills */
+/* Category - Grid */
+.category-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .category-grid {
-  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
-  scrollbar-width: none; -ms-overflow-style: none;
+  display: flex; flex-wrap: wrap; gap: 8px;
 }
-.category-grid::-webkit-scrollbar { display: none; }
 .category-btn {
   display: flex; align-items: center; gap: 6px;
-  padding: 8px 16px; white-space: nowrap;
+  padding: 8px 14px;
   background: var(--bg-card); border: 1px solid transparent;
   border-radius: 24px; color: var(--text-secondary);
   cursor: pointer; transition: all 0.2s var(--ease);
   font-family: var(--font); font-size: 13px; font-weight: 500;
 }
-.category-btn:hover { background: var(--bg-card-hover); color: var(--text); }
+.category-btn:hover { background: var(--bg-card-hover); color: var(--text); border-color: var(--border); }
 .category-btn.active {
   background: var(--primary-dim); border-color: var(--primary);
   color: var(--primary); font-weight: 600;
 }
-.category-btn .cat-icon { font-size: 16px; }
+.category-manage-btn {
+  font-size: 11px; color: var(--primary); background: none; border: none;
+  cursor: pointer; padding: 4px 8px; border-radius: 4px;
+  transition: all 0.2s;
+}
+.category-manage-btn:hover { background: var(--primary-dim); }
+.category-btn .cat-icon { font-size: 15px; }
 
 /* Price Filters */
 .price-btns { display: flex; flex-wrap: wrap; gap: 8px; }

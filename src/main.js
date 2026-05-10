@@ -9,6 +9,7 @@ const AMAP_KEY = 'a5d955462f96490f08f3b16d8344370e';
 // ========== State ==========
 const state = {
   restaurants: [...restaurants],
+  categories: [...categories],
   filtered: [...restaurants],
   selectedCategory: null,
   selectedPrice: 'all',
@@ -34,7 +35,7 @@ function stars(n, max = 5) {
 }
 
 function getCategoryById(id) {
-  return categories.find(c => c.id === id);
+  return state.categories.find(c => c.id === id);
 }
 
 function toast(msg, type = 'info') {
@@ -124,7 +125,7 @@ function renderCategories() {
     <button class="category-btn ${!state.selectedCategory ? 'active' : ''}" data-cat="all">
       <span class="cat-icon">🍽️</span>全部
     </button>
-    ${categories.map(c => `
+    ${state.categories.map(c => `
       <button class="category-btn ${state.selectedCategory === c.id ? 'active' : ''}" data-cat="${c.id}">
         <span class="cat-icon">${c.icon}</span>${c.name}
       </button>
@@ -469,10 +470,15 @@ function initPOISearch() {
 }
 
 // ========== Form (Add Restaurant) ==========
-function initAddForm() {
+function renderCategorySelect() {
   const select = document.getElementById('f-category');
+  if (!select) return;
   select.innerHTML = '<option value="">选择分类...</option>' +
-    categories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+    state.categories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+}
+
+function initAddForm() {
+  renderCategorySelect();
 
   document.getElementById('restaurant-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -649,6 +655,116 @@ function bindEvents() {
       () => toast('定位失败，请检查权限', 'error')
     );
   });
+
+  // Category Management
+  document.getElementById('manage-categories-btn').addEventListener('click', openCategoryModal);
+  document.getElementById('cat-modal-close').addEventListener('click', closeCategoryModal);
+  document.getElementById('cat-modal-cancel').addEventListener('click', closeCategoryModal);
+  document.getElementById('add-category-row-btn').addEventListener('click', addCategoryRow);
+  document.getElementById('cat-modal-save').addEventListener('click', saveCategories);
+}
+
+// ========== Category Management ==========
+function openCategoryModal() {
+  renderCategoryEditList();
+  document.getElementById('category-modal').classList.remove('hidden');
+}
+
+function closeCategoryModal() {
+  document.getElementById('category-modal').classList.add('hidden');
+}
+
+function renderCategoryEditList() {
+  const list = document.getElementById('category-edit-list');
+  list.innerHTML = state.categories.map((c, i) => `
+    <div class="cat-edit-row" data-index="${i}" style="display:flex;gap:8px;align-items:center;">
+      <input type="text" class="cat-edit-icon" value="${c.icon}" placeholder="图标" style="width:50px;text-align:center;">
+      <input type="text" class="cat-edit-name" value="${c.name}" placeholder="名称" style="flex:1;">
+      <input type="color" class="cat-edit-color" value="${c.color}" style="width:40px;height:38px;padding:2px;cursor:pointer;">
+      <button class="icon-btn" onclick="window.__removeCategoryRow(${i})" style="width:38px;height:38px;color:var(--danger);border-color:var(--danger)30;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+window.__removeCategoryRow = (index) => {
+  const rows = document.querySelectorAll('.cat-edit-row');
+  if (rows.length <= 1) {
+    toast('至少需要保留一个分类', 'error');
+    return;
+  }
+  rows[index].remove();
+  // Refresh indices
+  document.querySelectorAll('.cat-edit-row').forEach((row, i) => {
+    row.dataset.index = i;
+    row.querySelector('button').setAttribute('onclick', `window.__removeCategoryRow(${i})`);
+  });
+};
+
+function addCategoryRow() {
+  const list = document.getElementById('category-edit-list');
+  const index = document.querySelectorAll('.cat-edit-row').length;
+  const div = document.createElement('div');
+  div.className = 'cat-edit-row';
+  div.dataset.index = index;
+  div.style.display = 'flex';
+  div.style.gap = '8px';
+  div.style.alignItems = 'center';
+  div.innerHTML = `
+    <input type="text" class="cat-edit-icon" value="📍" placeholder="图标" style="width:50px;text-align:center;">
+    <input type="text" class="cat-edit-name" value="" placeholder="新分类" style="flex:1;">
+    <input type="color" class="cat-edit-color" value="#E8A838" style="width:40px;height:38px;padding:2px;cursor:pointer;">
+    <button class="icon-btn" onclick="window.__removeCategoryRow(${index})" style="width:38px;height:38px;color:var(--danger);border-color:var(--danger)30;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  `;
+  list.appendChild(div);
+  div.querySelector('.cat-edit-name').focus();
+}
+
+async function saveCategories() {
+  const rows = document.querySelectorAll('.cat-edit-row');
+  const newCategories = Array.from(rows).map((row, i) => ({
+    id: state.categories[i]?.id || Date.now() + i,
+    name: row.querySelector('.cat-edit-name').value.trim(),
+    slug: row.querySelector('.cat-edit-name').value.trim().toLowerCase().replace(/\s+/g, '-'),
+    icon: row.querySelector('.cat-edit-icon').value.trim(),
+    color: row.querySelector('.cat-edit-color').value
+  }));
+
+  if (newCategories.some(c => !c.name)) {
+    toast('分类名称不能为空', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('cat-modal-save');
+  btn.disabled = true;
+  btn.textContent = '保存中...';
+
+  try {
+    const res = await fetch('/api/save-categories', {
+      method: 'POST',
+      body: JSON.stringify(newCategories)
+    });
+    const data = await res.json();
+    if (data.success) {
+      state.categories = newCategories;
+      renderCategories();
+      renderCategorySelect();
+      renderRestaurantList();
+      renderMarkers();
+      closeCategoryModal();
+      toast('分类修改成功', 'success');
+    } else {
+      toast('保存失败: ' + data.error, 'error');
+    }
+  } catch (e) {
+    toast('网络请求失败', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '保存修改';
+  }
 }
 
 // ========== Init ==========

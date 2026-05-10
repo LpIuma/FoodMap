@@ -2,64 +2,78 @@
   {
     "id": 1,
     "name": "东北菜",
-    "slug": "dongbei",
+    "slug": "东北菜",
     "icon": "🥘",
-    "color": "#FF6B35"
+    "color": "#ff6b35"
   },
   {
     "id": 2,
     "name": "烧烤",
-    "slug": "bbq",
+    "slug": "烧烤",
     "icon": "🍢",
-    "color": "#E94560"
+    "color": "#e94560"
   },
   {
     "id": 3,
     "name": "火锅",
-    "slug": "hotpot",
+    "slug": "火锅",
     "icon": "🍲",
-    "color": "#FF4757"
+    "color": "#ff4757"
   },
   {
     "id": 4,
     "name": "韩餐",
-    "slug": "korean",
+    "slug": "韩餐",
     "icon": "🥬",
-    "color": "#6C5CE7"
+    "color": "#6c5ce7"
   },
   {
     "id": 5,
     "name": "日料",
-    "slug": "japanese",
+    "slug": "日料",
     "icon": "🍣",
-    "color": "#00B894"
+    "color": "#00b894"
   },
   {
     "id": 6,
     "name": "西餐",
-    "slug": "western",
+    "slug": "西餐",
     "icon": "🥩",
-    "color": "#0984E3"
+    "color": "#0984e3"
   },
   {
     "id": 7,
     "name": "小吃",
-    "slug": "snack",
+    "slug": "小吃",
     "icon": "🥟",
-    "color": "#FDCB6E"
+    "color": "#fdcb6e"
   },
   {
     "id": 8,
     "name": "咖啡甜品",
-    "slug": "cafe",
+    "slug": "咖啡甜品",
     "icon": "☕",
-    "color": "#A29BFE"
+    "color": "#a29bfe"
   },
   {
     "id": 9,
     "name": "面食",
-    "slug": "noodles",
+    "slug": "面食",
     "icon": "🍜",
-    "color": "#E17055"
+    "color": "#e17055"
+  },
+  {
+    "id": 1778402702653,
+    "name": "烤肉",
+    "slug": "烤肉",
+    "icon": "📍",
+    "color": "#e8a838"
+  },
+  {
+    "id": 1778402993828,
+    "name": "中餐",
+    "slug": "中餐",
+    "icon": "",
+    "color": "#e8a838"
   }
 ]

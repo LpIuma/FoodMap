@@ -61,7 +61,10 @@
       <div class="sidebar-inner">
         <!-- Category Filter -->
         <section class="sidebar-section">
-          <h3 class="sidebar-title">美食分类</h3>
+          <div class="category-header">
+            <h3 class="sidebar-title" style="margin-bottom:0;">美食分类</h3>
+            <button id="manage-categories-btn" class="category-manage-btn">⚙️ 管理</button>
+          </div>
           <div id="category-filters" class="category-grid"></div>
         </section>
         <!-- Price Filter -->
@@ -194,6 +197,30 @@
             <button type="submit" class="btn btn-primary">提交</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Category Management Modal -->
+    <div id="category-modal" class="modal-overlay hidden">
+      <div class="modal" style="max-width: 480px;">
+        <div class="modal-header">
+          <h2>管理分类</h2>
+          <button id="cat-modal-close" class="icon-btn" aria-label="关闭">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="category-edit-list" class="category-edit-list" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
+            <!-- Categories will be listed here -->
+          </div>
+          <button id="add-category-row-btn" class="btn btn-ghost" style="width:100%;justify-content:center;border-style:dashed;">
+            + 添加新分类
+          </button>
+        </div>
+        <div class="form-actions" style="padding:16px 24px;border-top:1px solid var(--border);">
+          <button id="cat-modal-cancel" class="btn btn-ghost">取消</button>
+          <button id="cat-modal-save" class="btn btn-primary">保存修改</button>
+        </div>
       </div>
     </div>
 

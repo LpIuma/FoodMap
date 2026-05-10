@@ -31,6 +31,25 @@ export default defineConfig({
             return;
           }
 
+          if (req.url === '/api/save-categories' && req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => {
+              body += chunk.toString();
+            });
+            req.on('end', () => {
+              try {
+                const dataPath = path.resolve(__dirname, 'src/data/categories.json');
+                fs.writeFileSync(dataPath, JSON.stringify(JSON.parse(body), null, 2));
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: true }));
+              } catch (err) {
+                res.statusCode = 500;
+                res.end(JSON.stringify({ success: false, error: err.message }));
+              }
+            });
+            return;
+          }
+
           if (req.url === '/api/push' && req.method === 'POST') {
             exec('git add .', () => {
               exec('git commit -m "Update data from local UI"', () => {

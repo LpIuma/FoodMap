@@ -25,5 +25,97 @@
     "cover_image": "",
     "images": [],
     "status": "pending"
+  },
+  {
+    "id": 1778402764483,
+    "name": "鑫钱库品质烤肉自助(新开河小区北区店)",
+    "slug": "鑫钱库品质烤肉自助(新开河小区北区店)",
+    "category_id": 1778402702653,
+    "address": "岭东路北新开河三路东住宅楼公建1幢101号房",
+    "district": "",
+    "latitude": 43.879899,
+    "longitude": 125.435751,
+    "phone": "18081941888",
+    "avg_price": 73,
+    "rating": {
+      "taste": 4,
+      "environment": 3,
+      "service": 3
+    },
+    "recommended_dishes": [],
+    "business_hours": "10:30-23:00",
+    "description": "",
+    "cover_image": "",
+    "images": [],
+    "status": "pending"
+  },
+  {
+    "id": 1778402825850,
+    "name": "無印家抹茶甜品专门店",
+    "slug": "無印家抹茶甜品专门店",
+    "category_id": 8,
+    "address": "西康路948-6号",
+    "district": "",
+    "latitude": 43.865568,
+    "longitude": 125.316104,
+    "phone": "18643198763",
+    "avg_price": 42,
+    "rating": {
+      "taste": 5,
+      "environment": 5,
+      "service": 4
+    },
+    "recommended_dishes": [],
+    "business_hours": "10:30-21:30",
+    "description": "",
+    "cover_image": "",
+    "images": [],
+    "status": "pending"
+  },
+  {
+    "id": 1778402877366,
+    "name": "清真-东德顺炭火锅(前进西街店)",
+    "slug": "清真-东德顺炭火锅(前进西街店)",
+    "category_id": 3,
+    "address": "前进西街红旗花园小区17栋",
+    "district": "",
+    "latitude": 43.837104,
+    "longitude": 125.28234,
+    "phone": "0431-86611778",
+    "avg_price": 63,
+    "rating": {
+      "taste": 4,
+      "environment": 4,
+      "service": 4
+    },
+    "recommended_dishes": [],
+    "business_hours": "09:30-22:00 09:30-22:00",
+    "description": "",
+    "cover_image": "",
+    "images": [],
+    "status": "pending"
+  },
+  {
+    "id": 1778403019643,
+    "name": "好味道广东烧腊餐厅(立信街店)",
+    "slug": "好味道广东烧腊餐厅(立信街店)",
+    "category_id": 1778402993828,
+    "address": "西康胡同19号108室",
+    "district": "",
+    "latitude": 43.865227,
+    "longitude": 125.320579,
+    "phone": "15604355829;18043168266",
+    "avg_price": 38,
+    "rating": {
+      "taste": 4,
+      "environment": 3,
+      "service": 3
+    },
+    "recommended_dishes": [],
+    "business_hours": "10:00-22:00",
+    "description": "",
+    "cover_image": "",
+    "images": [],
+    "status": "pending"
   }
 ]
