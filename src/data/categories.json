@@ -1,0 +1,65 @@
+[
+  {
+    "id": 1,
+    "name": "东北菜",
+    "slug": "dongbei",
+    "icon": "🥘",
+    "color": "#FF6B35"
+  },
+  {
+    "id": 2,
+    "name": "烧烤",
+    "slug": "bbq",
+    "icon": "🍢",
+    "color": "#E94560"
+  },
+  {
+    "id": 3,
+    "name": "火锅",
+    "slug": "hotpot",
+    "icon": "🍲",
+    "color": "#FF4757"
+  },
+  {
+    "id": 4,
+    "name": "韩餐",
+    "slug": "korean",
+    "icon": "🥬",
+    "color": "#6C5CE7"
+  },
+  {
+    "id": 5,
+    "name": "日料",
+    "slug": "japanese",
+    "icon": "🍣",
+    "color": "#00B894"
+  },
+  {
+    "id": 6,
+    "name": "西餐",
+    "slug": "western",
+    "icon": "🥩",
+    "color": "#0984E3"
+  },
+  {
+    "id": 7,
+    "name": "小吃",
+    "slug": "snack",
+    "icon": "🥟",
+    "color": "#FDCB6E"
+  },
+  {
+    "id": 8,
+    "name": "咖啡甜品",
+    "slug": "cafe",
+    "icon": "☕",
+    "color": "#A29BFE"
+  },
+  {
+    "id": 9,
+    "name": "面食",
+    "slug": "noodles",
+    "icon": "🍜",
+    "color": "#E17055"
+  }
+]

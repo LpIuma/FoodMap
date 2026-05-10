@@ -1,5 +1,6 @@
 import './styles/index.css';
-import { categories, restaurants } from './data/mockData.js';
+import categories from './data/categories.json';
+import restaurants from './data/restaurants.json';
 
 // ========== Config ==========
 // 在这里填入你的高德地图 Web服务 API Key
@@ -272,6 +273,10 @@ function showDetail(id) {
       ${r.description ? `
         <h3 class="detail-section-title">📝 简介</h3>
         <div class="detail-desc">${r.description}</div>` : ''}
+
+      <div style="margin-top:24px;display:flex;justify-content:flex-end;">
+        <button class="btn" style="background:#ff4d4f;color:white;border:none;" onclick="window.__deleteRestaurant(${r.id})">删除此餐厅</button>
+      </div>
     </div>
   `;
 
@@ -286,6 +291,21 @@ function showDetail(id) {
 }
 
 window.__showDetail = showDetail;
+
+window.__deleteRestaurant = (id) => {
+  if (!confirm('确定要删除此餐厅吗？')) return;
+  state.restaurants = state.restaurants.filter(r => r.id !== id);
+  applyFilters();
+  document.getElementById('detail-panel').classList.add('hidden');
+  
+  fetch('/api/save', {
+    method: 'POST',
+    body: JSON.stringify(state.restaurants)
+  }).then(res => res.json()).then(data => {
+    if (data.success) toast('已删除', 'success');
+    else toast('删除失败', 'error');
+  }).catch(() => toast('删除失败', 'error'));
+};
 
 // ========== Star Rating Widget ==========
 function initStarRatings() {
@@ -490,8 +510,15 @@ function initAddForm() {
     state.restaurants.push(newR);
     applyFilters();
     closeModal();
-    toast('餐厅已提交，等待审核', 'success');
     e.target.reset();
+
+    fetch('/api/save', {
+      method: 'POST',
+      body: JSON.stringify(state.restaurants)
+    }).then(res => res.json()).then(data => {
+      if (data.success) toast('餐馆已保存到本地', 'success');
+      else toast('保存失败', 'error');
+    }).catch(() => toast('保存失败', 'error'));
   });
 }
 
@@ -578,6 +605,26 @@ function bindEvents() {
   document.getElementById('form-cancel').addEventListener('click', closeModal);
   document.getElementById('add-modal').addEventListener('click', (e) => {
     if (e.target.classList.contains('modal-overlay')) closeModal();
+  });
+
+  // Push to GitHub
+  document.getElementById('push-github-btn')?.addEventListener('click', () => {
+    const btn = document.getElementById('push-github-btn');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '推送中...';
+    btn.disabled = true;
+    
+    fetch('/api/push', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) toast('已推送到 GitHub!', 'success');
+        else toast('推送失败: ' + (data.error || '未知错误'), 'error');
+      })
+      .catch(e => toast('推送请求失败', 'error'))
+      .finally(() => {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+      });
   });
 
   // Location picking hint
