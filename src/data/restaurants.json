@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1778401905782,
+    "name": "樽虎殿堂烧肉酒馆(红旗街店)",
+    "slug": "樽虎殿堂烧肉酒馆(红旗街店)",
+    "category_id": 2,
+    "address": "长治路与建平街交汇",
+    "district": "",
+    "latitude": 43.859157,
+    "longitude": 125.291841,
+    "phone": "15568868097",
+    "avg_price": 77,
+    "rating": {
+      "taste": 4,
+      "environment": 4,
+      "service": 4
+    },
+    "recommended_dishes": [
+      "酱虾",
+      "虾滑",
+      "牛肋条"
+    ],
+    "business_hours": "11:00-22:00",
+    "description": "",
+    "cover_image": "",
+    "images": [],
+    "status": "pending"
+  }
+]
